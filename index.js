@@ -6,11 +6,11 @@ const proxy = httpProxy.createProxyServer();
 
 const LISTEN_PORT = 9260;
 const TARGET_URL = 'http://localhost:9210';
-const TIMEOUT_TIME = 31 * 1000; // 31 seconds
+const TIMEOUT_TIME = 5 * 1000; // 5 seconds
 
 // A server that makes an operation that waits a while and then proxies the request
 http.createServer((req, res) => {
-  // This simulates an operation that takes 500ms to execute
+  // This simulates an operation that takes longer to execute
   setTimeout(() => {
     proxy.web(req, res, { target: TARGET_URL });
   }, TIMEOUT_TIME);
