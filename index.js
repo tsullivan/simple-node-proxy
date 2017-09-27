@@ -10,6 +10,8 @@ const TIMEOUT_TIME = 5 * 1000; // 5 seconds
 
 // A server that makes an operation that waits a while and then proxies the request
 http.createServer((req, res) => {
+  console.log(`${req.method} ${req.url}`);
+
   // This simulates an operation that takes longer to execute
   setTimeout(() => {
     proxy.web(req, res, { target: TARGET_URL });
