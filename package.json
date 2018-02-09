@@ -10,5 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "http-proxy": "^1.16.2"
+  },
+  "devDependencies": {
+    "eslint": "^4.17.0"
   }
 }
