@@ -1,7 +1,7 @@
 const https = require('https');
 const httpProxy = require('http-proxy');
 
-module.exports = function run(opts, reqLogger) {
+module.exports = function run(opts, logger) {
   const { TARGET_SSL, TARGET_URL, LISTEN_SSL, LISTEN_PORT, TIMEOUT_TIME } = opts;
 
   const proxy = httpProxy.createProxyServer({
@@ -11,7 +11,7 @@ module.exports = function run(opts, reqLogger) {
   });
 
   const proxyServer = https.createServer(LISTEN_SSL, (req, res) => {
-    reqLogger(req);
+    logger(req, res);
 
     setTimeout(() => {
       proxy.web(req, res, { target: TARGET_URL });
