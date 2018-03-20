@@ -10,7 +10,8 @@
   "author": "Tim Sullivan",
   "license": "ISC",
   "dependencies": {
-    "http-proxy": "^1.16.2"
+    "http-proxy": "^1.16.2",
+    "yargs": "^11.0.0"
   },
   "devDependencies": {
     "eslint": "^4.17.0"
