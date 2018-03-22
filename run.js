@@ -18,5 +18,14 @@ module.exports = function run(opts, logger) {
     }, TIMEOUT_TIME);
   });
 
+  // Listen for the `error` event on `proxy`.
+  proxy.on('error', (err, req, res) => {
+    res.writeHead(500, {
+      'Content-Type': 'text/plain'
+    });
+
+    res.end(`Something went wrong from the proxy: ${err.message}`);
+  });
+
   return proxyServer.listen(LISTEN_PORT);
 };
