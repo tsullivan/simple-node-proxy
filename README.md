@@ -31,3 +31,5 @@ module.exports = Object.assign({}, cmdOpts, {
   LISTEN_SSL
 });
 ```
+
+Then I do `npm start -- --timeoutTime=333` to throttle the response from local ES to local Kibana by 333 ms.
