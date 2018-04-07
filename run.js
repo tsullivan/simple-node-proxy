@@ -24,7 +24,7 @@ module.exports = function run(opts, logger) {
       'Content-Type': 'text/plain'
     });
 
-    res.end(`Something went wrong from the proxy: ${err.message}`);
+    res.end(`Something went wrong from the otherwise awesome proxy: ${err.message}`);
   });
 
   return proxyServer.listen(LISTEN_PORT);
