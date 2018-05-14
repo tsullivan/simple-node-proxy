@@ -11,10 +11,14 @@ module.exports = function run(opts, logger) {
   });
 
   const proxyServer = https.createServer(LISTEN_SSL, (req, res) => {
-    logger(req, res);
-
+    let startMs = new Date().getTime();
     setTimeout(() => {
       proxy.web(req, res, { target: TARGET_URL });
+
+      res.on('finish', () => {
+        const timeMs = new Date().getTime() - startMs;
+        logger('request', req, res, { time_ms: timeMs });
+      });
     }, TIMEOUT_TIME);
   });
 
@@ -24,6 +28,7 @@ module.exports = function run(opts, logger) {
       'Content-Type': 'text/plain'
     });
 
+    logger('error', req, res, { error: err });
     res.end(`Something went wrong from the otherwise awesome proxy: ${err.message}`);
   });
 

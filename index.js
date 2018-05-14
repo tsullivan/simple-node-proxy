@@ -2,12 +2,12 @@ const log = require('json-log');
 const run = require('./run');
 const opts = require('./opts');
 
-const logger = (req, res) => {
-  log(`${req.method} ${req.url} - ${res.statusCode}`);
-  log('request', {
+const logger = (type, req, res, message) => {
+  log(type, {
     method: req.method,
     url: req.url,
-    statusCode: res.statusCode
+    statusCode: res.statusCode,
+    message,
   });
 };
 
