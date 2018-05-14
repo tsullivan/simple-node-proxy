@@ -498,6 +498,10 @@ invert-kv@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/invert-kv/-/invert-kv-1.0.0.tgz#104a8e4aaca6d3d8cd157a8ef8bfab2d7a3ffdb6"
 
+is-error@2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/is-error/-/is-error-2.2.0.tgz#2f4b67a631261274f6e5a7ef74c2a59a5edb24d1"
+
 is-fullwidth-code-point@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/is-fullwidth-code-point/-/is-fullwidth-code-point-1.0.0.tgz#ef9e31386f031a7f0d643af82fde50c457ef00cb"
@@ -554,6 +558,12 @@ js-yaml@^3.9.1:
   dependencies:
     argparse "^1.0.7"
     esprima "^4.0.0"
+
+json-log@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/json-log/-/json-log-1.0.1.tgz#082d27b8d5a1a9d2ab8e1247894a7b98d01298c6"
+  dependencies:
+    is-error "2.2.0"
 
 json-schema-traverse@^0.3.0:
   version "0.3.1"
