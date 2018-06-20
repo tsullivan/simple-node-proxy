@@ -1,7 +1,8 @@
-const https = require('https');
-const httpProxy = require('http-proxy');
+import * as https from 'https';
+import * as httpProxy from 'http-proxy';
+import { IOpts } from './types';
 
-module.exports = function run(opts, logger) {
+export function run(opts: IOpts, logger, cb: () => void) {
   const { TARGET_SSL, TARGET_URL, LISTEN_SSL, LISTEN_PORT, TIMEOUT_TIME } = opts;
 
   const proxy = httpProxy.createProxyServer({
@@ -32,5 +33,6 @@ module.exports = function run(opts, logger) {
     res.end(`Something went wrong from the otherwise awesome proxy: ${err.message}`);
   });
 
+  cb();
   return proxyServer.listen(LISTEN_PORT);
-};
+}

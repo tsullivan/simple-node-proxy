@@ -12,9 +12,15 @@
   "dependencies": {
     "http-proxy": "^1.16.2",
     "json-log": "^1.0.1",
+    "ts-node": "^7.0.1",
+    "typescript": "^2.9.2",
     "yargs": "^11.0.0"
   },
   "devDependencies": {
-    "eslint": "^4.17.0"
+    "@types/node": "^10.12.9",
+    "eslint": "^4.17.0",
+    "prettier": "^1.14.3",
+    "tslint": "^5.11.0",
+    "tslint-config-prettier": "^1.15.0"
   }
 }
