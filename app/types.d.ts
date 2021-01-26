@@ -1,6 +1,6 @@
 export interface IOpts {
-  LISTEN_PORT: string;
-  TIMEOUT_TIME: string;
+  LISTEN_PORT: number;
+  TIMEOUT_TIME: number;
   TARGET_URL: string;
   TARGET_SSL: {
     key: string;

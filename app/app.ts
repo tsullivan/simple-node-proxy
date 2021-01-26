@@ -1,9 +1,10 @@
 import { run } from './run';
-import * as log from 'json-log';
-import * as opts from '../opts';
+import { JsonLog } from 'json-log';
+import { opts } from '../opts';
 
+const log = new JsonLog('simple-node-proxy');
 const logger = (type, req, res, message) => {
-  log(type, {
+  log.info(type, {
     method: req.method,
     url: req.url,
     statusCode: res.statusCode,
@@ -12,5 +13,5 @@ const logger = (type, req, res, message) => {
 };
 
 run(opts, logger, () => {
-  log(`Listening on ${opts.LISTEN_PORT}, proxying to ${opts.TARGET_URL}`);
+  log.info(`Listening on ${opts.LISTEN_PORT}, proxying to ${opts.TARGET_URL}`);
 });
