@@ -2,8 +2,13 @@ import { run } from './run';
 import { JsonLog } from 'json-log';
 import { opts } from '../opts';
 
-const log = new JsonLog('simple-node-proxy');
-const logger = (type, req, res, message) => {
+const log = new JsonLog('');
+const logger = (
+  type: string,
+  req: { method: any; url: any },
+  res: { statusCode: any },
+  message: any
+) => {
   log.info(type, {
     method: req.method,
     url: req.url,
@@ -13,5 +18,11 @@ const logger = (type, req, res, message) => {
 };
 
 run(opts, logger, () => {
-  log.info(`Listening on ${opts.LISTEN_PORT}, proxying to ${opts.TARGET_URL}`);
+  let url: string;
+  if (opts.NO_SSL) {
+    url = `http://localhost:${opts.LISTEN_PORT}`;
+  } else {
+    url = `https://localhost:${opts.LISTEN_PORT}`;
+  }
+  log.info(`Listening on ${url}, proxying to ${opts.TARGET_URL}`);
 });
