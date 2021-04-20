@@ -4,6 +4,8 @@ import * as httpProxy from 'http-proxy';
 import { IOpts } from './types';
 import { Logger } from './app';
 
+type InitFn = () => [httpProxy, http.Server];
+
 export function run(opts: IOpts, logger: Logger, cb: () => void): http.Server {
   const {
     TARGET_SSL,
@@ -14,16 +16,13 @@ export function run(opts: IOpts, logger: Logger, cb: () => void): http.Server {
     NO_SSL,
   } = opts;
 
-  let proxy: httpProxy;
-  let proxyServer: http.Server;
-
-  if (NO_SSL) {
-    proxy = httpProxy.createProxyServer({
+  const doNoSsl: InitFn = () => {
+    const proxy = httpProxy.createProxyServer({
       target: TARGET_URL,
       secure: false,
     });
 
-    proxyServer = http.createServer((req, res) => {
+    const proxyServer = http.createServer((req, res) => {
       const startMs = new Date().getTime();
       setTimeout(() => {
         proxy.web(req, res, { target: TARGET_URL });
@@ -34,14 +33,18 @@ export function run(opts: IOpts, logger: Logger, cb: () => void): http.Server {
         });
       }, TIMEOUT_TIME);
     });
-  } else {
-    proxy = httpProxy.createProxyServer({
+
+    return [proxy, proxyServer];
+  };
+
+  const doSsl: InitFn = () => {
+    const proxy = httpProxy.createProxyServer({
       ssl: TARGET_SSL,
       target: TARGET_URL,
       secure: false,
     });
 
-    proxyServer = https.createServer(LISTEN_SSL, (req, res) => {
+    const proxyServer = https.createServer(LISTEN_SSL, (req, res) => {
       const startMs = new Date().getTime();
       setTimeout(() => {
         proxy.web(req, res, { target: TARGET_URL });
@@ -52,7 +55,11 @@ export function run(opts: IOpts, logger: Logger, cb: () => void): http.Server {
         });
       }, TIMEOUT_TIME);
     });
-  }
+
+    return [proxy, proxyServer];
+  };
+
+  const [proxy, proxyServer] = NO_SSL ? doNoSsl() : doSsl();
 
   // Listen for the `error` event on `proxy`.
   proxy.on('error', (err, req, res) => {
