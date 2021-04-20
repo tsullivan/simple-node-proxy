@@ -1,14 +1,17 @@
-import { run } from './run';
+import { IncomingMessage, ServerResponse } from 'http';
 import { JsonLog } from 'json-log';
 import { opts } from '../opts';
+import { run } from './run';
 
 const log = new JsonLog('');
-const logger = (
+export type Logger = (
   type: string,
-  req: { method: any; url: any },
-  res: { statusCode: any },
-  message: any
-) => {
+  req: IncomingMessage,
+  res: ServerResponse,
+  message: Record<string, string | number | Error>
+) => void;
+
+const logger: Logger = (type, req, res, message) => {
   log.info(type, {
     method: req.method,
     url: req.url,
