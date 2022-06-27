@@ -8,11 +8,9 @@ import { Logger } from './app';
  *
  * local types
  */
-type ThrottleCheckFn = (req: http.IncomingMessage) => boolean;
-const throttleCheck: ThrottleCheckFn = (req) => {
-  return (
-    req.url.match(/\/_search\?\S+&scroll=\d\ds|\/_search\/scroll/) !== null
-  );
+type ThrottleCheckFn = (req?: http.IncomingMessage) => boolean;
+const throttleCheck: ThrottleCheckFn = () => {
+  return true;
 };
 
 type InitFn = () => [httpProxy, http.Server];
