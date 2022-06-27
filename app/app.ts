@@ -11,7 +11,12 @@ export type Logger = (
   message: Record<string, string | number | Error>
 ) => void;
 
-const logger: Logger = (type, req, res, message) => {
+const logger: Logger = (
+  type: string,
+  req: IncomingMessage,
+  res: ServerResponse,
+  message
+) => {
   log.info(type, {
     method: req.method,
     url: req.url,

@@ -4,8 +4,29 @@ import * as httpProxy from 'http-proxy';
 import { IOpts } from './types';
 import { Logger } from './app';
 
+/**
+ *
+ * local types
+ */
+type ThrottleCheckFn = (req: http.IncomingMessage) => boolean;
+const throttleCheck: ThrottleCheckFn = (req) => {
+  return (
+    req.url.match(/\/_search\?\S+&scroll=\d\ds|\/_search\/scroll/) !== null
+  );
+};
+
 type InitFn = () => [httpProxy, http.Server];
 
+type RequestHandler = (
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  startMs: number
+) => (isThrottle?: boolean) => void;
+
+/**
+ *
+ * export
+ */
 export function run(opts: IOpts, logger: Logger, cb: () => void): http.Server {
   const {
     TARGET_SSL,
@@ -13,28 +34,15 @@ export function run(opts: IOpts, logger: Logger, cb: () => void): http.Server {
     LISTEN_SSL,
     LISTEN_PORT,
     TIMEOUT_TIME,
-    NO_SSL,
   } = opts;
 
-  const doNoSsl: InitFn = () => {
-    const proxy = httpProxy.createProxyServer({
-      target: TARGET_URL,
-      secure: false,
+  const handleRequest: RequestHandler = (req, res, startMs) => (isThrottle?: boolean) => {
+    proxy.web(req, res, { target: TARGET_URL });
+
+    res.on('finish', () => {
+      const timeMs = new Date().getTime() - startMs;
+      logger(isThrottle ? 'THROTTLED request' : 'request', req, res, { time_ms: timeMs });
     });
-
-    const proxyServer = http.createServer((req, res) => {
-      const startMs = new Date().getTime();
-      setTimeout(() => {
-        proxy.web(req, res, { target: TARGET_URL });
-
-        res.on('finish', () => {
-          const timeMs = new Date().getTime() - startMs;
-          logger('request', req, res, { time_ms: timeMs });
-        });
-      }, TIMEOUT_TIME);
-    });
-
-    return [proxy, proxyServer];
   };
 
   const doSsl: InitFn = () => {
@@ -46,20 +54,20 @@ export function run(opts: IOpts, logger: Logger, cb: () => void): http.Server {
 
     const proxyServer = https.createServer(LISTEN_SSL, (req, res) => {
       const startMs = new Date().getTime();
-      setTimeout(() => {
-        proxy.web(req, res, { target: TARGET_URL });
+      const handler = handleRequest(req, res, startMs);
 
-        res.on('finish', () => {
-          const timeMs = new Date().getTime() - startMs;
-          logger('request', req, res, { time_ms: timeMs });
-        });
-      }, TIMEOUT_TIME);
+      const isThrottle = throttleCheck(req);
+      if (isThrottle) {
+        setTimeout(() => handler(isThrottle), TIMEOUT_TIME); // delay the ES data
+      } else {
+        handler();
+      }
     });
 
     return [proxy, proxyServer];
   };
 
-  const [proxy, proxyServer] = NO_SSL ? doNoSsl() : doSsl();
+  const [proxy, proxyServer] = doSsl();
 
   // Listen for the `error` event on `proxy`.
   proxy.on('error', (err, req, res) => {
