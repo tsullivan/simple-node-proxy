@@ -3,9 +3,11 @@ import { JsonLog } from 'json-log';
 import { opts } from '../opts';
 import { run, ThrottleCheckFn } from './run';
 
-export const throttleCheck: ThrottleCheckFn = () => {
-  return true;
+export const throttleCheck: ThrottleCheckFn = (req) => {
+  const isMatch = req.url.match(/\/_search\?\S+&scroll=\d/) !== null;
+  return isMatch;
 };
+
 
 const log = new JsonLog('');
 export type Logger = (
