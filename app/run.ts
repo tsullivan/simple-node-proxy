@@ -9,9 +9,6 @@ import { Logger } from './app';
  * local types
  */
 type ThrottleCheckFn = (req?: http.IncomingMessage) => boolean;
-const throttleCheck: ThrottleCheckFn = () => {
-  return true;
-};
 
 type InitFn = () => [httpProxy, http.Server];
 
@@ -32,7 +29,12 @@ export function run(opts: IOpts, logger: Logger, cb: () => void): http.Server {
     LISTEN_SSL,
     LISTEN_PORT,
     TIMEOUT_TIME,
+    NO_SSL,
   } = opts;
+
+  const throttleCheck: ThrottleCheckFn = () => {
+    return true;
+  };
 
   const handleRequest: RequestHandler = (req, res, startMs) => (isThrottle?: boolean) => {
     proxy.web(req, res, { target: TARGET_URL });
@@ -43,29 +45,38 @@ export function run(opts: IOpts, logger: Logger, cb: () => void): http.Server {
     });
   };
 
+  const createServer = (req: http.IncomingMessage, res: http.ServerResponse) => {
+    const startMs = new Date().getTime();
+    const handler = handleRequest(req, res, startMs);
+
+    const isThrottle = throttleCheck(req);
+    if (isThrottle) {
+      setTimeout(() => handler(isThrottle), TIMEOUT_TIME); // delay the ES data
+    } else {
+      handler();
+    }
+  };
+
+  const doNoSsl: InitFn = () => {
+    const proxy = httpProxy.createProxyServer({
+      target: TARGET_URL,
+      secure: false,
+    });
+    const proxyServer = http.createServer(createServer);
+    return [proxy, proxyServer];
+  };
+
   const doSsl: InitFn = () => {
     const proxy = httpProxy.createProxyServer({
       ssl: TARGET_SSL,
       target: TARGET_URL,
       secure: false,
     });
-
-    const proxyServer = https.createServer(LISTEN_SSL, (req, res) => {
-      const startMs = new Date().getTime();
-      const handler = handleRequest(req, res, startMs);
-
-      const isThrottle = throttleCheck(req);
-      if (isThrottle) {
-        setTimeout(() => handler(isThrottle), TIMEOUT_TIME); // delay the ES data
-      } else {
-        handler();
-      }
-    });
-
+    const proxyServer = https.createServer(LISTEN_SSL, createServer);
     return [proxy, proxyServer];
   };
 
-  const [proxy, proxyServer] = doSsl();
+  const [proxy, proxyServer] = NO_SSL ? doNoSsl() : doSsl();
 
   // Listen for the `error` event on `proxy`.
   proxy.on('error', (err, req, res) => {
