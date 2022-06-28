@@ -2,14 +2,14 @@ import * as https from 'https';
 import * as http from 'http';
 import * as httpProxy from 'http-proxy';
 import { IOpts } from './types';
-import { Logger } from './app';
+import { Logger, throttleCheck } from './app';
+
+export type ThrottleCheckFn = (req?: http.IncomingMessage) => boolean;
 
 /**
  *
  * local types
  */
-type ThrottleCheckFn = (req?: http.IncomingMessage) => boolean;
-
 type InitFn = () => [httpProxy, http.Server];
 
 type RequestHandler = (
@@ -31,10 +31,6 @@ export function run(opts: IOpts, logger: Logger, cb: () => void): http.Server {
     TIMEOUT_TIME,
     NO_SSL,
   } = opts;
-
-  const throttleCheck: ThrottleCheckFn = () => {
-    return true;
-  };
 
   const handleRequest: RequestHandler = (req, res, startMs) => (isThrottle?: boolean) => {
     proxy.web(req, res, { target: TARGET_URL });

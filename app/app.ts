@@ -1,7 +1,11 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { JsonLog } from 'json-log';
 import { opts } from '../opts';
-import { run } from './run';
+import { run, ThrottleCheckFn } from './run';
+
+export const throttleCheck: ThrottleCheckFn = () => {
+  return true;
+};
 
 const log = new JsonLog('');
 export type Logger = (
