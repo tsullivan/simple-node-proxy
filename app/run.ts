@@ -75,7 +75,7 @@ export function run(opts: IOpts, logger: Logger, cb: () => void): http.Server {
   const [proxy, proxyServer] = NO_SSL ? doNoSsl() : doSsl();
 
   // Listen for the `error` event on `proxy`.
-  proxy.on('error', (err, req, res) => {
+  proxy.on('error', (err, req, res: http.ServerResponse) => {
     res.writeHead(500, {
       'Content-Type': 'text/plain',
     });
