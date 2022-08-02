@@ -1,7 +1,8 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { JsonLog } from 'json-log';
-import { opts } from '../opts';
 import { run, ThrottleCheckFn } from './run';
+import { IOpts } from './types';
+
 
 export const throttleCheck: ThrottleCheckFn = (req) => {
   const isMatch = req.url.match(/\/_search\?\S+&scroll=\d/) !== null;
@@ -30,7 +31,7 @@ const logger: Logger = (
   });
 };
 
-run(opts, logger, () => {
+run(logger, (opts: IOpts) => {
   let url: string;
   if (opts.NO_SSL) {
     url = `http://localhost:${opts.LISTEN_PORT}`;

@@ -1,38 +1,28 @@
 ## simple-node-proxy
 ====================
 
-You need to create your own `opts.js` file. Mine looks like:
+### Quick Starting
 
+Command to run the proxy server:
+```
+npm start -- --timeoutTime=2000 --listenPort=5620 --targetUrl=http://localhost:5660 --noSsl
+```
+
+The above example will add 2 seconds of response delay to requests that match the `const throttleCheck: ThrottleCheckFn` function check in `app/app.ts`.
+
+To throttle every response, change the `ThrottleCheckFn` to simply return `true`.
+
+### Running the proxy with SSL
+
+Add the following code in a file called `ssl.ts`:
 ```javascript
 const fs = require('fs');
-const { argv } = require('yargs');
 
 const TARGET_SSL = {
-  key: fs.readFileSync('./conf/spicy.local/spicy.local-key.pem', 'utf8'),
-  cert: fs.readFileSync('./conf/spicy.local/spicy.local-crt.pem', 'utf8')
+  key: fs.readFileSync('./certs/key.pem', 'utf8'),
+  cert: fs.readFileSync('./certs/crt.pem', 'utf8')
 };
-const LISTEN_SSL = TARGET_SSL;
-
-const { listenPort, targetUrl, timeoutTime } = argv;
-const cmdOpts = {
-  LISTEN_PORT: listenPort || 9290,
-  TARGET_URL: targetUrl || 'https://spicy.local:9200',
-  TIMEOUT_TIME: parseInt(timeoutTime, 10) || 0
-};
-
-console.log('options:', JSON.stringify({ // eslint-disable-line no-console
-  listenPort: cmdOpts.LISTEN_PORT,
-  targetUrl: cmdOpts.TARGET_URL,
-  timeoutTime: cmdOpts.TIMEOUT_TIME
-}));
-
-module.exports = Object.assign({}, cmdOpts, {
-  TARGET_SSL,
-  LISTEN_SSL
-});
+const LISTEN_SSL = TARGET_SSL; // this uses the same certificate for listening and forwarding
 ```
 
-Command to run the server:
-```
-npm start -- --timeoutTime=0 --listenPort=5620 --targetUrl=http://localhost:5660 --noSsl
-```
+Then import `ssl.ts` from `app/run.ts` and add TARGET_SSL and LISTEN_SSL to the `const opts: IOpts` variable in app/run.ts. When starting the proxy server, do not add the `--noSsl` flag to the start command.
