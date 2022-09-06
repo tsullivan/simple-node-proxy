@@ -4,6 +4,7 @@ import { run, ThrottleCheckFn } from './run';
 import { IOpts } from './types';
 
 
+// FIXME change this for each kind of test
 export const throttleCheck: ThrottleCheckFn = (req) => {
   const isMatch = req.url.match(/\/_search\?\S+&scroll=\d/) !== null;
   return isMatch;
