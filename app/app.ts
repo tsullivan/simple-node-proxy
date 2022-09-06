@@ -1,8 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { JsonLog } from 'json-log';
+import { IOpts } from '../';
 import { run, ThrottleCheckFn } from './run';
-import { IOpts } from './types';
-
 
 // FIXME change this for each kind of test
 export const throttleCheck: ThrottleCheckFn = (req) => {

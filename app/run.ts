@@ -1,8 +1,8 @@
-import { argv } from 'yargs';
-import * as https from 'https';
 import * as http from 'http';
 import * as httpProxy from 'http-proxy';
-import { IOpts } from './types';
+import * as https from 'https';
+import { argv } from 'yargs';
+import { IOpts } from '../';
 import { Logger, throttleCheck } from './app';
 
 export type ThrottleCheckFn = (req?: http.IncomingMessage) => boolean;
@@ -24,7 +24,7 @@ type RequestHandler = (
  * export
  */
 export function run(logger: Logger, cb: (opts: IOpts) => void): http.Server {
-  const { listenPort, targetUrl, timeoutTime, noSsl } = (argv as unknown) as {
+  const { listenPort, targetUrl, timeoutTime, noSsl } = argv as unknown as {
     listenPort: string;
     timeoutTime: string;
     targetUrl: string;
@@ -48,18 +48,17 @@ export function run(logger: Logger, cb: (opts: IOpts) => void): http.Server {
     NO_SSL,
   } = opts;
 
-  const handleRequest: RequestHandler = (req, res, startMs) => (
-    isThrottle?: boolean
-  ) => {
-    proxy.web(req, res, { target: TARGET_URL });
+  const handleRequest: RequestHandler =
+    (req, res, startMs) => (isThrottle?: boolean) => {
+      proxy.web(req, res, { target: TARGET_URL });
 
-    res.on('finish', () => {
-      const timeMs = new Date().getTime() - startMs;
-      logger(isThrottle ? 'THROTTLED request' : 'request', req, res, {
-        time_ms: timeMs,
+      res.on('finish', () => {
+        const timeMs = new Date().getTime() - startMs;
+        logger(isThrottle ? 'THROTTLED request' : 'request', req, res, {
+          time_ms: timeMs,
+        });
       });
-    });
-  };
+    };
 
   const createServer = (
     req: http.IncomingMessage,
