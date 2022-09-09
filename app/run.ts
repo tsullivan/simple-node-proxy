@@ -54,8 +54,10 @@ export function run(logger: Logger, cb: (opts: IOpts) => void): http.Server {
 
       res.on('finish', () => {
         const timeMs = new Date().getTime() - startMs;
-        logger(isThrottle ? 'THROTTLED request' : 'request', req, res, {
+        const throttledMs = isThrottle ? timeMs : 0;
+        logger('request', req, res, {
           time_ms: timeMs,
+          throttled_ms: throttledMs,
         });
       });
     };
