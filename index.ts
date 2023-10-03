@@ -3,30 +3,9 @@ import * as httpProxy from 'http-proxy';
 import { JsonLog } from 'json-log';
 import { argv } from 'yargs';
 
-interface IOpts {
-  LISTEN_PORT: number;
-  TIMEOUT_TIME: number;
-  TARGET_URL: string;
-  NO_SSL?: boolean;
-  TARGET_SSL?: {
-    key: string;
-    cert: string;
-  };
-  LISTEN_SSL?: {
-    key: string;
-    cert: string;
-  };
-}
-
-type RequestHandler = (
-  req: http.IncomingMessage,
-  res: http.ServerResponse,
-  startMs: number
-) => (isThrottle?: boolean) => void;
-
-type InitFn = () => [httpProxy, http.Server];
-
 const log = new JsonLog('');
+const match404 = /zzzbundles\/plugin\/canvas\/1.0.0\/canvas.chunk/;
+
 function run(cb: (opts: IOpts) => void): http.Server | undefined {
   const { listenPort, targetUrl, timeoutTime, noSsl } = (argv as unknown) as {
     listenPort: string;
@@ -40,22 +19,24 @@ function run(cb: (opts: IOpts) => void): http.Server | undefined {
     TIMEOUT_TIME: parseInt(timeoutTime, 10) || 0,
     NO_SSL: !!noSsl,
   };
-
   log.info('run options', JSON.stringify({ opts }));
+  const { LISTEN_PORT, TARGET_URL, NO_SSL } = opts;
 
-  const {
-    LISTEN_PORT,
-    TARGET_URL,
-    NO_SSL,
-  } = opts;
-
-  const handleRequest: RequestHandler = (req, res, startMs) => (
+  const createServer = (
+    req: http.IncomingMessage,
+    res: http.ServerResponse
   ) => {
-    if (req?.url?.match(/bundles\/plugin\/kibanaOverview.*\.chunk/)) {
-      console.log('SPLAT');
-      process.exit();
+    const startMs = new Date().getTime();
+    // Use regular expression matching to choose to proxy the request or return a 404
+    if (req.url?.match(match404)) {
+      console.log(`\n\n\n\nReturning 404 for request to ${req.url}`);
+      // Return a 404
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Not Found');
+    } else {
+      // Proxy the request
+      proxy?.web(req, res, { target: TARGET_URL });
     }
-    proxy?.web(req, res, { target: TARGET_URL });
 
     res.on('finish', () => {
       const timeMs = new Date().getTime() - startMs;
@@ -68,15 +49,6 @@ function run(cb: (opts: IOpts) => void): http.Server | undefined {
         }),
       });
     });
-  };
-
-  const createServer = (
-    req: http.IncomingMessage,
-    res: http.ServerResponse
-  ) => {
-    const startMs = new Date().getTime();
-    const handler = handleRequest(req, res, startMs);
-    handler();
   };
 
   const doNoSsl: InitFn = () => {
@@ -103,4 +75,21 @@ run((opts: IOpts) => {
   }
   log.info(`Listening on ${url}, proxying to ${opts.TARGET_URL}`);
 });
+
+interface IOpts {
+  LISTEN_PORT: number;
+  TIMEOUT_TIME: number;
+  TARGET_URL: string;
+  NO_SSL?: boolean;
+  TARGET_SSL?: {
+    key: string;
+    cert: string;
+  };
+  LISTEN_SSL?: {
+    key: string;
+    cert: string;
+  };
+}
+
+type InitFn = () => [httpProxy, http.Server];
 
