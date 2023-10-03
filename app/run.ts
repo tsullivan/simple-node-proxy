@@ -1,11 +1,8 @@
 import * as http from 'http';
 import * as httpProxy from 'http-proxy';
-import * as https from 'https';
 import { argv } from 'yargs';
 import { IOpts } from '../';
-import { Logger, throttleCheck } from './app';
-
-export type ThrottleCheckFn = (req?: http.IncomingMessage) => boolean;
+import { Logger } from './app';
 
 /**
  *
@@ -23,8 +20,8 @@ type RequestHandler = (
  *
  * export
  */
-export function run(logger: Logger, cb: (opts: IOpts) => void): http.Server {
-  const { listenPort, targetUrl, timeoutTime, noSsl } = argv as unknown as {
+export function run(logger: Logger, cb: (opts: IOpts) => void): http.Server | undefined {
+  const { listenPort, targetUrl, timeoutTime, noSsl } = (argv as unknown) as {
     listenPort: string;
     timeoutTime: string;
     targetUrl: string;
@@ -32,7 +29,7 @@ export function run(logger: Logger, cb: (opts: IOpts) => void): http.Server {
   };
   const opts: IOpts = {
     LISTEN_PORT: parseInt(listenPort, 10) || 9290,
-    TARGET_URL: targetUrl || 'https://spicy.local:9200',
+    TARGET_URL: targetUrl,
     TIMEOUT_TIME: parseInt(timeoutTime, 10) || 0,
     NO_SSL: !!noSsl,
   };
@@ -42,25 +39,24 @@ export function run(logger: Logger, cb: (opts: IOpts) => void): http.Server {
   const {
     LISTEN_PORT,
     TARGET_URL,
-    TIMEOUT_TIME,
-    LISTEN_SSL,
-    TARGET_SSL,
     NO_SSL,
   } = opts;
 
-  const handleRequest: RequestHandler =
-    (req, res, startMs) => (isThrottle?: boolean) => {
-      proxy.web(req, res, { target: TARGET_URL });
+  const handleRequest: RequestHandler = (req, res, startMs) => (
+  ) => {
+    if (req?.url?.match(/bundles\/plugin\/lens.*\.chunk/)) {
+      console.log('SPLAT');
+      process.exit();
+    }
+    proxy?.web(req, res, { target: TARGET_URL });
 
-      res.on('finish', () => {
-        const timeMs = new Date().getTime() - startMs;
-        const throttledMs = isThrottle ? timeMs : 0;
-        logger('request', req, res, {
-          time_ms: timeMs,
-          throttled_ms: throttledMs,
-        });
+    res.on('finish', () => {
+      const timeMs = new Date().getTime() - startMs;
+      logger('request', req, res, {
+        time_ms: timeMs,
       });
-    };
+    });
+  };
 
   const createServer = (
     req: http.IncomingMessage,
@@ -68,13 +64,7 @@ export function run(logger: Logger, cb: (opts: IOpts) => void): http.Server {
   ) => {
     const startMs = new Date().getTime();
     const handler = handleRequest(req, res, startMs);
-
-    const isThrottle = throttleCheck(req);
-    if (isThrottle) {
-      setTimeout(() => handler(isThrottle), TIMEOUT_TIME); // delay the ES data
-    } else {
-      handler();
-    }
+    handler();
   };
 
   const doNoSsl: InitFn = () => {
@@ -86,30 +76,8 @@ export function run(logger: Logger, cb: (opts: IOpts) => void): http.Server {
     return [proxy, proxyServer];
   };
 
-  const doSsl: InitFn = () => {
-    const proxy = httpProxy.createProxyServer({
-      ssl: TARGET_SSL,
-      target: TARGET_URL,
-      secure: false,
-    });
-    const proxyServer = https.createServer(LISTEN_SSL, createServer);
-    return [proxy, proxyServer];
-  };
-
-  const [proxy, proxyServer] = NO_SSL ? doNoSsl() : doSsl();
-
-  // Listen for the `error` event on `proxy`.
-  proxy.on('error', (err, req, res: http.ServerResponse) => {
-    res.writeHead(500, {
-      'Content-Type': 'text/plain',
-    });
-
-    logger('error', req, res, { error: err });
-    res.end(
-      `Something went wrong from the otherwise awesome proxy: ${err.message}`
-    );
-  });
+  const [proxy, proxyServer] = NO_SSL ? doNoSsl() : [];
 
   cb(opts);
-  return proxyServer.listen(LISTEN_PORT);
+  return proxyServer?.listen(LISTEN_PORT);
 }

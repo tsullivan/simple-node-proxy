@@ -1,13 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { JsonLog } from 'json-log';
 import { IOpts } from '../';
-import { run, ThrottleCheckFn } from './run';
-
-// FIXME change this for each kind of test
-export const throttleCheck: ThrottleCheckFn = (req) => {
-  const isMatch = req.url.match(/\/_search\?\S+&scroll=\d/) !== null;
-  return isMatch;
-};
+import { run } from './run';
 
 const log = new JsonLog('');
 export type Logger = (
