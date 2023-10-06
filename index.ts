@@ -4,16 +4,21 @@ import { JsonLog } from 'json-log';
 import { argv } from 'yargs';
 import { IOpts } from './types';
 
-const log = new JsonLog('');
-// block ML app
-// block Reporting widget
-// change commented line
-const match404 = [
-  /\/bundles\/plugin\/ml\/1.*\/ml\.chunk\./,
-  // /\/bundles\/plugin\/reporting\/1.*\/reporting\.chunk\./,
+//  keep one line uncommented
+const respond404 = [
+  (url: string | undefined) => url && url.match(/bundles\/plugin\/triggersActionsUi\/1.0.0\/triggersActionsUi.chunk.8.js/),
+  // (url: string | undefined) => url && url.match(/\/bundles\/plugin\/aiops\/1.*\/aiops\.chunk\./),
+  // /\/bundles\/plugin\/.*\.chunk\./,
+][0];
+//  keep one line uncommented
+const denyRandomly = [
+  () => true,
+  // () => (Math.random() * 8) < 1, // 1/10 chance of being true
+  // () => false,
 ][0];
 
 const runNoSsl = ({TARGET_URL, LISTEN_PORT}: {TARGET_URL: string, LISTEN_PORT: number}) => {
+  const log = new JsonLog('runNoSsl');
   const proxy = httpProxy.createProxyServer({
     target: TARGET_URL,
     secure: false,
@@ -23,8 +28,8 @@ const runNoSsl = ({TARGET_URL, LISTEN_PORT}: {TARGET_URL: string, LISTEN_PORT: n
     res: http.ServerResponse
   ) => {
     const startMs = new Date().getTime();
-    // Use regular expression matching to choose to proxy the request or return a 404
-    if (req.url?.match(match404)) {
+
+    if (respond404(req.url) && denyRandomly()) {
       console.log(`\n\n\n\nReturning 404 for request to ${req.url}`);
       // Return a 404
       res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -50,6 +55,7 @@ const runNoSsl = ({TARGET_URL, LISTEN_PORT}: {TARGET_URL: string, LISTEN_PORT: n
 };
 
 function run() {
+  const log = new JsonLog('run');
   const { listenPort, targetUrl, noSsl } = (argv as unknown) as {
     listenPort: string;
     targetUrl: string;
@@ -74,4 +80,5 @@ function run() {
 
 const finalOpts = run();
 const url = `http://localhost:${finalOpts.LISTEN_PORT}`;
-log.info(`Listening on ${url}, proxying to ${finalOpts.TARGET_URL}`);
+const mainLog = new JsonLog('main');
+mainLog.info(`Listening on ${url}, proxying to ${finalOpts.TARGET_URL}`);
