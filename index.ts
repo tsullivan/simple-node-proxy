@@ -5,10 +5,13 @@ import { argv } from 'yargs';
 import { IOpts } from './types';
 
 const log = new JsonLog('');
-// block Lens bundle
-const match404 = /\/bundles\/plugin\/canvas\/.*\/canvas\.chunk/;
-// block Reporting chunk
-// const match404 = /bundles\/plugin\/reporting\/1.0.0\/reporting\.chunk/;
+// block ML app
+// block Reporting widget
+// change commented line
+const match404 = [
+  /\/bundles\/plugin\/ml\/1.*\/ml\.chunk\./,
+  // /\/bundles\/plugin\/reporting\/1.*\/reporting\.chunk\./,
+][0];
 
 const runNoSsl = ({TARGET_URL, LISTEN_PORT}: {TARGET_URL: string, LISTEN_PORT: number}) => {
   const proxy = httpProxy.createProxyServer({
