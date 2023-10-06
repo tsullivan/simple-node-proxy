@@ -2,27 +2,20 @@ import * as http from 'http';
 import * as httpProxy from 'http-proxy';
 import { JsonLog } from 'json-log';
 import { argv } from 'yargs';
+import { IOpts } from './types';
 
 const log = new JsonLog('');
-const match404 = /zzzbundles\/plugin\/canvas\/1.0.0\/canvas.chunk/;
+// block Lens bundle
+const match404 = /\/bundles\/plugin\/canvas\/.*\/canvas\.chunk/;
+// block Reporting chunk
+// const match404 = /bundles\/plugin\/reporting\/1.0.0\/reporting\.chunk/;
 
-function run(cb: (opts: IOpts) => void): http.Server | undefined {
-  const { listenPort, targetUrl, timeoutTime, noSsl } = (argv as unknown) as {
-    listenPort: string;
-    timeoutTime: string;
-    targetUrl: string;
-    noSsl: boolean;
-  };
-  const opts: IOpts = {
-    LISTEN_PORT: parseInt(listenPort, 10) || 9290,
-    TARGET_URL: targetUrl,
-    TIMEOUT_TIME: parseInt(timeoutTime, 10) || 0,
-    NO_SSL: !!noSsl,
-  };
-  log.info('run options', JSON.stringify({ opts }));
-  const { LISTEN_PORT, TARGET_URL, NO_SSL } = opts;
-
-  const createServer = (
+const runNoSsl = ({TARGET_URL, LISTEN_PORT}: {TARGET_URL: string, LISTEN_PORT: number}) => {
+  const proxy = httpProxy.createProxyServer({
+    target: TARGET_URL,
+    secure: false,
+  });
+  const proxyServer = http.createServer((
     req: http.IncomingMessage,
     res: http.ServerResponse
   ) => {
@@ -49,47 +42,33 @@ function run(cb: (opts: IOpts) => void): http.Server | undefined {
         }),
       });
     });
+  });
+  proxyServer?.listen(LISTEN_PORT);
+};
+
+function run() {
+  const { listenPort, targetUrl, noSsl } = (argv as unknown) as {
+    listenPort: string;
+    targetUrl: string;
+    noSsl: boolean;
   };
-
-  const doNoSsl: InitFn = () => {
-    const proxy = httpProxy.createProxyServer({
-      target: TARGET_URL,
-      secure: false,
-    });
-    const proxyServer = http.createServer(createServer);
-    return [proxy, proxyServer];
+  const opts: IOpts = {
+    LISTEN_PORT: parseInt(listenPort, 10) || 9290,
+    TARGET_URL: targetUrl,
+    NO_SSL: !!noSsl,
   };
+  const { LISTEN_PORT, TARGET_URL } = opts;
 
-  const [proxy, proxyServer] = NO_SSL ? doNoSsl() : [];
+  log.info('run options', JSON.stringify({ opts }));
 
-  cb(opts);
-  return proxyServer?.listen(LISTEN_PORT);
-}
-
-run((opts: IOpts) => {
-  let url: string;
+  // only no ssl works
   if (opts.NO_SSL) {
-    url = `http://localhost:${opts.LISTEN_PORT}`;
-  } else {
-    url = `https://localhost:${opts.LISTEN_PORT}`;
+    runNoSsl({TARGET_URL, LISTEN_PORT});
   }
-  log.info(`Listening on ${url}, proxying to ${opts.TARGET_URL}`);
-});
 
-interface IOpts {
-  LISTEN_PORT: number;
-  TIMEOUT_TIME: number;
-  TARGET_URL: string;
-  NO_SSL?: boolean;
-  TARGET_SSL?: {
-    key: string;
-    cert: string;
-  };
-  LISTEN_SSL?: {
-    key: string;
-    cert: string;
-  };
+  return opts;
 }
 
-type InitFn = () => [httpProxy, http.Server];
-
+const finalOpts = run();
+const url = `http://localhost:${finalOpts.LISTEN_PORT}`;
+log.info(`Listening on ${url}, proxying to ${finalOpts.TARGET_URL}`);
