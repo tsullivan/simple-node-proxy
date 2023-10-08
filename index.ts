@@ -4,8 +4,17 @@ import { JsonLog } from 'json-log';
 import { argv } from 'yargs';
 import { IOpts } from './types';
 
-const respond404 = (url: string | undefined) => url && url.match(/chunk\.js/); // deny if url matches "chunk";
-const denyRandomly = () => Math.random() < 0.3; // deny 1/3 times
+const respond404 = (url: string | undefined) =>
+  url
+    && url.match(/plugin\/.*chunk\.\d+\.js$/) != null
+    && url.match(/visuali/) == null
+    && url.match(/lens/) == null
+    && url.match(/charts/) == null
+    && url.match(/maps/) == null
+    && url.match(/eventAnno/) == null
+    && url.match(/controls/) == null;
+const denyRandomly = () => true;
+//const denyRandomly = () => Math.random() < 0.9; // high number for heavy denying
 
 const runNoSsl = ({TARGET_URL, LISTEN_PORT}: {TARGET_URL: string, LISTEN_PORT: number}) => {
   const log = new JsonLog('runNoSsl');
