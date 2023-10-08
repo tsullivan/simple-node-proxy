@@ -2,22 +2,20 @@ import * as http from 'http';
 import * as httpProxy from 'http-proxy';
 import { JsonLog } from 'json-log';
 import { argv } from 'yargs';
-import { IOpts } from './types';
+import { IOpts } from '../types';
 
-const respond404 = (url: string | undefined) =>
-  url
-    && url.match(/plugin\/.*chunk\.\d+\.js$/) != null
-    && url.match(/visuali/) == null
-    && url.match(/lens/) == null
-    && url.match(/charts/) == null
-    && url.match(/maps/) == null
-    && url.match(/eventAnno/) == null
-    && url.match(/controls/) == null;
-const denyRandomly = () => true;
-//const denyRandomly = () => Math.random() < 0.9; // high number for heavy denying
+const allowUrl = (url: string | undefined) =>
+  url && (
+    url.match(/plugin\/.*\/.*\.chunk\.\d+\.js$/) == null // block every plugin chunk
+    // exceptions
+    || url.match(/security/) != null
+    || url.match(/serverlessSearch/) != null
+    || url.match(/management/) != null
+    || url.match(/observability/) != null
+  );
 
 const runNoSsl = ({TARGET_URL, LISTEN_PORT}: {TARGET_URL: string, LISTEN_PORT: number}) => {
-  const log = new JsonLog('runNoSsl');
+  const log = new JsonLog('"logger":"runNoSsl",');
   const proxy = httpProxy.createProxyServer({
     target: TARGET_URL,
     secure: false,
@@ -28,7 +26,7 @@ const runNoSsl = ({TARGET_URL, LISTEN_PORT}: {TARGET_URL: string, LISTEN_PORT: n
   ) => {
     const startMs = new Date().getTime();
 
-    if (respond404(req.url) && denyRandomly()) {
+    if (!allowUrl(req.url)) {
       console.log(`\n\n\n\nReturning 404 for request to ${req.url}`);
       // Return a 404
       res.writeHead(404, { 'Content-Type': 'text/plain' });
