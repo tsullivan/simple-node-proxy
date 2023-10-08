@@ -4,18 +4,8 @@ import { JsonLog } from 'json-log';
 import { argv } from 'yargs';
 import { IOpts } from './types';
 
-//  keep one line uncommented
-const respond404 = [
-  (url: string | undefined) => url && url.match(/bundles\/plugin\/triggersActionsUi\/1.0.0\/triggersActionsUi.chunk.8.js/),
-  // (url: string | undefined) => url && url.match(/\/bundles\/plugin\/aiops\/1.*\/aiops\.chunk\./),
-  // /\/bundles\/plugin\/.*\.chunk\./,
-][0];
-//  keep one line uncommented
-const denyRandomly = [
-  () => true,
-  // () => (Math.random() * 8) < 1, // 1/10 chance of being true
-  // () => false,
-][0];
+const respond404 = (url: string | undefined) => url && url.match(/chunk\.js/); // deny if url matches "chunk";
+const denyRandomly = () => Math.random() < 0.3; // deny 1/3 times
 
 const runNoSsl = ({TARGET_URL, LISTEN_PORT}: {TARGET_URL: string, LISTEN_PORT: number}) => {
   const log = new JsonLog('runNoSsl');
@@ -64,7 +54,7 @@ function run() {
   const opts: IOpts = {
     LISTEN_PORT: parseInt(listenPort, 10) || 9290,
     TARGET_URL: targetUrl,
-    NO_SSL: !!noSsl,
+    NO_SSL: Boolean(noSsl),
   };
   const { LISTEN_PORT, TARGET_URL } = opts;
 
