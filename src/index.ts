@@ -26,15 +26,16 @@ const runNoSsl = ({TARGET_URL, LISTEN_PORT}: {TARGET_URL: string, LISTEN_PORT: n
   ) => {
     const startMs = new Date().getTime();
 
-    if (!allowUrl(req.url)) {
+    if (allowUrl(req.url)) {
+      // Proxy the request
+      proxy?.web(req, res, { target: TARGET_URL });
+    } else {
       console.log(`\n\n\n\nReturning 404 for request to ${req.url}`);
       // Return a 404
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end('Not Found');
-    } else {
-      // Proxy the request
-      proxy?.web(req, res, { target: TARGET_URL });
     }
+
 
     res.on('finish', () => {
       const timeMs = new Date().getTime() - startMs;
