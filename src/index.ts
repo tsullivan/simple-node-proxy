@@ -5,14 +5,10 @@ import { argv } from 'yargs';
 import { IOpts } from '../types';
 
 const allowUrl = (url: string | undefined) =>
-  url && (
-    url.match(/plugin\/.*\/.*\.chunk\.\d+\.js$/) == null // block every plugin chunk
-    // exceptions
-    || url.match(/security/) != null
-    || url.match(/serverlessSearch/) != null
-    || url.match(/management/) != null
-    || url.match(/observability/) != null
-  );
+  url 
+    && url.match(/plugin\/reporting.*\/.*\.chunk\.\d+\.js$/) == null // block every reporting
+    && url.match(/plugin\/security.*\/.*\.chunk\.[^04]\.js$/) == null // block most security (allow login page)
+;
 
 const runNoSsl = ({TARGET_URL, LISTEN_PORT}: {TARGET_URL: string, LISTEN_PORT: number}) => {
   const log = new JsonLog('"logger":"runNoSsl",');
