@@ -4,10 +4,14 @@ import { JsonLog } from 'json-log';
 import { argv } from 'yargs';
 import { IOpts } from '../types';
 
-const allowUrl = (url: string | undefined) =>
-  url 
-    && url.match(/plugin\/reporting.*\/.*\.chunk\.\d+\.js$/) == null // block every reporting
-    && url.match(/plugin\/security.*\/.*\.chunk\.[^04]\.js$/) == null // block most security (allow login page)
+const respond404 = (url: string | undefined) =>
+  url
+    && url.match(/plugin\/.*chunk\.\d+\.js$/) != null
+    && url.match(/security/) == null
+    && url.match(/observability/) == null
+
+    && url.match(/\/management\.chunk\./) == null
+    && url.match(/\/savedObjectsTagging\.chunk\.1\.js/) == null
 ;
 
 const runNoSsl = ({TARGET_URL, LISTEN_PORT}: {TARGET_URL: string, LISTEN_PORT: number}) => {
@@ -22,14 +26,14 @@ const runNoSsl = ({TARGET_URL, LISTEN_PORT}: {TARGET_URL: string, LISTEN_PORT: n
   ) => {
     const startMs = new Date().getTime();
 
-    if (allowUrl(req.url)) {
-      // Proxy the request
-      proxy?.web(req, res, { target: TARGET_URL });
-    } else {
+    if (respond404(req.url)) {
       console.log(`\n\n\n\nReturning 404 for request to ${req.url}`);
       // Return a 404
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end('Not Found');
+    } else {
+      // Proxy the request
+      proxy?.web(req, res, { target: TARGET_URL });
     }
 
 
