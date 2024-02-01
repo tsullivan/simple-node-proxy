@@ -4,15 +4,8 @@ import { JsonLog } from 'json-log';
 import { argv } from 'yargs';
 import { IOpts } from '../types';
 
-const respond404 = (url: string | undefined) =>
-  url
-    && url.match(/plugin\/.*chunk\.\d+\.js$/) != null
-    && url.match(/security/) == null
-    && url.match(/observability/) == null
-
-    && url.match(/\/management\.chunk\./) == null
-    && url.match(/\/savedObjectsTagging\.chunk\.1\.js/) == null
-;
+const SLOW_TIME = 5000; // in ms
+const makeItSlow = (url: string | undefined) => url && url.match(/test-data\S*\/\S*_search/) !== null;
 
 const runNoSsl = ({TARGET_URL, LISTEN_PORT}: {TARGET_URL: string, LISTEN_PORT: number}) => {
   const log = new JsonLog('"logger":"runNoSsl",');
@@ -26,11 +19,12 @@ const runNoSsl = ({TARGET_URL, LISTEN_PORT}: {TARGET_URL: string, LISTEN_PORT: n
   ) => {
     const startMs = new Date().getTime();
 
-    if (respond404(req.url)) {
-      console.log(`\n\n\n\nReturning 404 for request to ${req.url}`);
-      // Return a 404
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('Not Found');
+    if (makeItSlow(req.url)) {
+      console.log(`\n\n\n\nMaking it slow for request to ${req.url}`);
+      setTimeout(() => {
+        // Proxy the request
+        proxy?.web(req, res, { target: TARGET_URL });
+      }, SLOW_TIME);
     } else {
       // Proxy the request
       proxy?.web(req, res, { target: TARGET_URL });
